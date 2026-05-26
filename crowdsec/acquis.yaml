@@ -1,0 +1,5 @@
+filenames:
+  - /var/log/nginx/real_access.log
+  - /var/log/nginx/real_error.log
+labels:
+  type: nginx
