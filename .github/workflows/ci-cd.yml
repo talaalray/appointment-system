@@ -1,4 +1,4 @@
-name: CI/CD Pipeline (Separated with Real MySQL Tests)
+name: CI/CD Pipeline (3 Stages)
 
 on:
   push:
@@ -9,18 +9,15 @@ env:
   MAVEN_OPTS: -Dmaven.repo.local=/home/project2/.m2/repository
 
 jobs:
-  # ──────────────────────────────────────────
-  # 1. بناء الحزمة (Package)
-  # ──────────────────────────────────────────
   build:
     runs-on: self-hosted
     steps:
-      - name: تجهيز مستودع العمل (clone أو pull)
+      - name: تجهيز مستودع العمل (clone أو reset)
         run: |
           if [ -d "$WORKDIR/.git" ]; then
             cd $WORKDIR
             git fetch origin
-git reset --hard origin/main
+            git reset --hard origin/main
           else
             git clone https://${{ github.token }}@github.com/${{ github.repository }}.git $WORKDIR
           fi
@@ -29,9 +26,6 @@ git reset --hard origin/main
         working-directory: ${{ env.WORKDIR }}
         run: mvn clean package -DskipTests -B
 
-  # ──────────────────────────────────────────
-  # 2. الاختبارات الحقيقية مع MySQL
-  # ──────────────────────────────────────────
   test:
     needs: build
     runs-on: self-hosted
@@ -41,7 +35,7 @@ git reset --hard origin/main
           if [ -d "$WORKDIR/.git" ]; then
             cd $WORKDIR
             git fetch origin
-git reset --hard origin/main
+            git reset --hard origin/main
           else
             git clone https://${{ github.token }}@github.com/${{ github.repository }}.git $WORKDIR
           fi
@@ -75,9 +69,6 @@ git reset --hard origin/main
         if: always()
         run: docker rm -f mysql-test
 
-  # ──────────────────────────────────────────
-  # 3. النشر (Deploy)
-  # ──────────────────────────────────────────
   deploy:
     needs: test
     runs-on: self-hosted
@@ -87,7 +78,7 @@ git reset --hard origin/main
           if [ -d "$WORKDIR/.git" ]; then
             cd $WORKDIR
             git fetch origin
-git reset --hard origin/main
+            git reset --hard origin/main
           else
             git clone https://${{ github.token }}@github.com/${{ github.repository }}.git $WORKDIR
           fi
