@@ -19,7 +19,8 @@ jobs:
         run: |
           if [ -d "$WORKDIR/.git" ]; then
             cd $WORKDIR
-            git pull origin main
+            git fetch origin
+git reset --hard origin/main
           else
             git clone https://${{ github.token }}@github.com/${{ github.repository }}.git $WORKDIR
           fi
@@ -39,7 +40,8 @@ jobs:
         run: |
           if [ -d "$WORKDIR/.git" ]; then
             cd $WORKDIR
-            git pull origin main
+            git fetch origin
+git reset --hard origin/main
           else
             git clone https://${{ github.token }}@github.com/${{ github.repository }}.git $WORKDIR
           fi
@@ -84,7 +86,8 @@ jobs:
         run: |
           if [ -d "$WORKDIR/.git" ]; then
             cd $WORKDIR
-            git pull origin main
+            git fetch origin
+git reset --hard origin/main
           else
             git clone https://${{ github.token }}@github.com/${{ github.repository }}.git $WORKDIR
           fi
