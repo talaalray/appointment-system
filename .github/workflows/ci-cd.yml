@@ -48,7 +48,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: testroot
           APP_JWT_SECRET: MyTestSecretKeyForCI@2026!SecureX
 
-  deploy:
+  push:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -63,3 +63,14 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/appointment-app:latest
+
+  deploy:
+    needs: push
+    runs-on: self-hosted   # يعمل على خادمك المحلي
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: تحديث التطبيق محلياً
+        run: |
+          cd ~/appointment-system
+          docker compose pull app
+          docker compose up -d --no-deps app
