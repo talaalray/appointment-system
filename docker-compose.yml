@@ -18,25 +18,20 @@ services:
     networks:
       - internal-net
     environment:
-      MYSQL_ROOT_PASSWORD: secretpassword
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: appointmentdb
       MYSQL_USER: appuser
-      MYSQL_PASSWORD: AppPass@2026
-    ports:
-      - "3307:3306"
-    volumes:
-      - mysqldata:/var/lib/mysql
-    # تعديل الفحص ليصبح متوافقاً مع البيئة بدون مشاكل الـ Shell
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    
     healthcheck:
-      test: mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 40s
 
   app:
-    # نقوم بتحديد اسم الصورة ليتطابق مع ما يتم رفعه لـ Docker Hub في الـ CI/CD
-    image: talaalray/appointment-app:latest 
+    image: talaalray/appointment-app:latest
     container_name: appointment-app
     restart: unless-stopped
     networks:
@@ -48,10 +43,10 @@ services:
       SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/appointmentdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_DRIVER: com.mysql.cj.jdbc.Driver
       SPRING_DATASOURCE_USERNAME: appuser
-      SPRING_DATASOURCE_PASSWORD: AppPass@2026
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      APP_JWT_SECRET: MySuperSecretJWTKey@2026!SecureX
+      APP_JWT_SECRET: ${JWT_SECRET}
       APP_JWT_ACCESSEXPMIN: 60
       SERVER_SSL_ENABLED: "false"
       SERVER_PORT: "8080"
@@ -90,3 +85,16 @@ services:
       - nginx-logs:/var/log/nginx:ro
     security_opt:
       - no-new-privileges:true
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin
+    restart: unless-stopped
+    networks:
+      - internal-net
+    ports:
+      - "127.0.0.1:8082:80" 
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: ${DB_ROOT_PASSWORD}

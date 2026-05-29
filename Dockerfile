@@ -1,4 +1,4 @@
-# المرحلة الأولى: بناء التطبيق باستخدام Maven
+
 FROM maven:3.9-eclipse-temurin-17 AS builder
 WORKDIR /build
 COPY pom.xml .
@@ -6,7 +6,7 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests -B
 
-# المرحلة الثانية: تشغيل التطبيق باستخدام JRE خفيف
+
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
