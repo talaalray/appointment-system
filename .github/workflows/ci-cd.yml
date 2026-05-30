@@ -39,7 +39,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: maven
-      - name: تشغيل الاختبارات مع MySQL
+      - name: testing
         run: mvn test -B
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/testdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
@@ -66,10 +66,10 @@ jobs:
 
   deploy:
     needs: push
-    runs-on: self-hosted   # يعمل على خادمك المحلي
+    runs-on: self-hosted  
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: تحديث التطبيق محلياً
+      - name: update app
         run: |
           cd ~/appointment-system
           docker compose pull app
