@@ -72,5 +72,6 @@ jobs:
       - name: update app
         run: |
           cd ~/appointment-system
+          git pull origin main
           docker compose pull app
           docker compose up -d --no-deps app
