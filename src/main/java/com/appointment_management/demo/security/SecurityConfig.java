@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+			.requestMatchers("/web/login").permitAll()
                         .requestMatchers("/h2-console","/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )

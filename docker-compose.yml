@@ -22,13 +22,12 @@ services:
     networks:
       - internal-net
     volumes:
-      - mysqldata:/var/lib/mysql    
+      - mysqldata:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: appointmentdb
       MYSQL_USER: appuser
       MYSQL_PASSWORD: ${DB_PASSWORD}
-    
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
@@ -89,7 +88,6 @@ services:
       UID: "1000"
       PROMETHEUS_ENABLED: "true"
       PROMETHEUS_ADDR: "0.0.0.0:6060"
-      #CROWDSEC_WHITELIST_PRIVATE_NETWORKS: "false"
     volumes:
       - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
       - crowdsec-db:/var/lib/crowdsec/data
@@ -104,7 +102,7 @@ services:
     networks:
       - internal-net
     ports:
-      - "8082:80" 
+      - "8082:80"
     environment:
       PMA_HOST: db
       PMA_USER: root
@@ -122,7 +120,7 @@ services:
       HOST: 0.0.0.0
       CROWDSEC_URL: http://crowdsec-security:8080
       CROWDSEC_USER: web-ui
-      CROWDSEC_PASSWORD: "password123"   # استخدم كلمة المرور اللي حددتها
+      CROWDSEC_PASSWORD: "password123"
 
   prometheus:
     image: prom/prometheus:latest
