@@ -321,26 +321,12 @@
                         </div>
                     </form>
                 </div>
-                <!-- Admin panel -->
-                <div class="card" id="adminAppointmentPanel" style="display:none;">
-                    <div class="card-title"><i class="fas fa-user-cog"></i> إدارة موعد برقمه (للمدير)</div>
-                    <div class="form-grid" style="grid-template-columns:1fr 1fr auto;">
-                        <div class="form-group"><label>معرف الموعد</label><input type="number" id="adminApptId" placeholder="أدخل رقم الموعد" /></div>
-                        <div class="form-group" style="justify-content:end;display:flex;gap:4px;flex-wrap:wrap;">
-                            <button class="btn btn-xs btn-success" onclick="adminApprove()"><i class="fas fa-check"></i> قبول</button>
-                            <button class="btn btn-xs btn-danger" onclick="adminReject()"><i class="fas fa-times"></i> رفض</button>
-                            <button class="btn btn-xs btn-warning" onclick="adminCancel()"><i class="fas fa-ban"></i> إلغاء</button>
-                            <button class="btn btn-xs btn-primary" onclick="adminFinish()"><i class="fas fa-flag-checkered"></i> إنهاء</button>
-                        </div>
-                    </div>
-                    <div id="adminApptResult" style="margin-top:8px;font-size:0.85rem;"></div>
-                </div>
+
                 <!-- Appointment list -->
                 <div class="card">
                     <div class="card-title"><i class="fas fa-list"></i> قائمة المواعيد</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
                         <button class="btn btn-sm btn-outline" onclick="loadAppointments()"><i class="fas fa-sync"></i> تحديث</button>
-                        <!-- أزرار خاصة بكل دور -->
                         <button class="btn btn-sm btn-outline" id="btnAdminAllAppointments" onclick="loadAdminAllAppointments()" style="display:none;"><i class="fas fa-list"></i> كل المواعيد</button>
                         <button class="btn btn-sm btn-outline" id="btnMyAppointments" onclick="loadMyAppointments()" style="display:none;"><i class="fas fa-user"></i> مواعيدي (زبون)</button>
                         <button class="btn btn-sm btn-outline" id="btnProviderAppointments" onclick="loadProviderAppointments()" style="display:none;"><i class="fas fa-user-tie"></i> مواعيدي (مقدم)</button>
@@ -479,7 +465,7 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- ============================================================ -->
-    <!-- ===== JAVASCRIPT المُعدَّل (بدون احتياطيات خاطئة) ===== -->
+    <!-- ===== JAVASCRIPT (تم إزالة زر "إنهاء" للمدير) ===== -->
     <script>
         // ================================================================
         //  STATE
@@ -493,6 +479,7 @@
             serviceTotalPages: 1,
             appointmentList: [],
             allProviders: [],
+            servicesMap: {},
         };
 
         // ================================================================
@@ -560,7 +547,7 @@
         }
 
         // ================================================================
-        //  جلب جميع مقدمي الخدمة (لجداول العمل والعطلات)
+        //  جلب جميع مقدمي الخدمة
         // ================================================================
         async function fetchAllProviders() {
             try {
@@ -645,8 +632,6 @@
                 isAdmin ? 'إدارة جميع المواعيد' :
                 isStaff ? 'عرض مواعيدك كمقدم خدمة' :
                 'عرض مواعيدك كزبون';
-
-            document.getElementById('adminAppointmentPanel').style.display = isAdmin ? 'block' : 'none';
 
             document.getElementById('btnAdminAllAppointments').style.display = isAdmin ? 'inline-flex' : 'none';
             document.getElementById('btnMyAppointments').style.display = isCustomer ? 'inline-flex' : 'none';
@@ -800,6 +785,13 @@
                 const list = data.content || [];
                 const totalPages = data.totalPages || 1;
                 STATE.serviceTotalPages = totalPages;
+
+                list.forEach(s => {
+                    if (s.id && s.name) {
+                        STATE.servicesMap[s.id] = s.name;
+                    }
+                });
+
                 const tbody = document.getElementById('serviceTableBody');
                 const isAdmin = STATE.role === 'ADMIN';
                 if (!list.length) {
@@ -920,7 +912,7 @@
         }
 
         // ================================================================
-        //  APPOINTMENTS - إصلاح عرض المواعيد للمدير
+        //  APPOINTMENTS - بدون زر "إنهاء" للمدير
         // ================================================================
         let apptLoadMode = 'customer';
 
@@ -932,12 +924,10 @@
             } else if (role === 'STAFF') {
                 await loadProviderAppointments();
             } else if (role === 'ADMIN') {
-                // فقط جلب الكل، بدون احتياطي خاطئ
                 await loadAdminAllAppointments();
             }
         }
 
-        // === نقطة جلب كل المواعيد للمدير ===
         async function loadAdminAllAppointments() {
             apptLoadMode = 'admin_all';
             try {
@@ -956,14 +946,12 @@
                             <br><small>تأكد من أن الباك يحتوي على الـ Endpoint <code>${ADMIN_ALL_APPOINTMENTS_URL}</code> وأن لديك صلاحية ADMIN.</small>
                             <br>
                             <button class="btn btn-sm btn-primary mt-2" onclick="loadAdminAllAppointments()">إعادة المحاولة</button>
-                            <button class="btn btn-sm btn-outline mt-2" onclick="document.getElementById('adminAppointmentPanel').scrollIntoView({behavior:'smooth'})">استخدم لوحة المدير</button>
                         </td>
                     </tr>
                 `;
             }
         }
 
-        // === نقطة عرض مواعيد العميل الحالي ===
         async function loadMyAppointments() {
             apptLoadMode = 'customer';
             try {
@@ -977,7 +965,6 @@
             }
         }
 
-        // === نقطة عرض مواعيد مقدم الخدمة الحالي ===
         async function loadProviderAppointments() {
             apptLoadMode = 'provider';
             try {
@@ -1026,11 +1013,21 @@
                     customerName = a.customerId;
                 }
 
-                const serviceName = a.service?.name || a.serviceId || '-';
+                let serviceName = '-';
+                if (a.service && a.service.name) {
+                    serviceName = a.service.name;
+                } else if (a.serviceId && STATE.servicesMap[a.serviceId]) {
+                    serviceName = STATE.servicesMap[a.serviceId];
+                } else if (a.service && a.service.id && STATE.servicesMap[a.service.id]) {
+                    serviceName = STATE.servicesMap[a.service.id];
+                } else {
+                    const id = a.serviceId || a.service?.id || '-';
+                    serviceName = id !== '-' ? `#${id}` : '-';
+                }
 
                 let actions = '';
                 if (isAdmin) {
-                    // أزرار التحكم للمدير تعتمد على الحالة الحالية
+                    // ==== أزرار المدير (بدون إنهاء) ====
                     actions = `
                         ${a.status === 'PENDING' ? `
                             <button class="btn btn-xs btn-success" onclick="approveAppt(${a.id})"><i class="fas fa-check"></i></button>
@@ -1041,11 +1038,9 @@
                         ${a.status === 'PENDING' || a.status === 'APPROVED' ? `
                             <button class="btn btn-xs btn-warning" onclick="cancelAppt(${a.id})"><i class="fas fa-ban"></i></button>
                         ` : ''}
-                        ${a.status === 'APPROVED' ? `
-                            <button class="btn btn-xs btn-primary" onclick="finishAppt(${a.id})"><i class="fas fa-flag-checkered"></i></button>
-                        ` : ''}
                     `;
                 } else if (isStaff && a.status === 'APPROVED') {
+                    // ==== زر إنهاء للموظف (STAFF) ====
                     actions =
                         `<button class="btn btn-xs btn-primary" onclick="finishAppt(${a.id})"><i class="fas fa-flag-checkered"></i> إنهاء</button>`;
                 } else if (isCustomer) {
@@ -1078,34 +1073,24 @@
             }).join('');
         }
 
-        // ===== Admin actions via ID =====
-        async function adminApprove() {
-            const id = document.getElementById('adminApptId').value;
-            if (!id) { toast('أدخل معرف الموعد', 'warning'); return; }
+        // ===== دوال الإجراءات =====
+        async function approveAppt(id) {
             try { await apiFetch(`/api/appointments/${id}/approve`, { method: 'GET' });
                 toast('تم قبول الموعد', 'success');
-                document.getElementById('adminApptResult').innerHTML =
-                `<span class="text-muted">✅ تم قبول الموعد ${id}</span>`; } catch (err) { toast('خطأ: ' + err.message,
-                    'error'); }
+                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
         }
 
-        async function adminReject() {
-            const id = document.getElementById('adminApptId').value;
-            if (!id) { toast('أدخل معرف الموعد', 'warning'); return; }
+        async function rejectAppt(id) {
             const reason = prompt('سبب الرفض (اختياري):');
             try { await apiFetch(`/api/appointments/${id}/reject`, {
                     method: 'GET',
                     body: reason ? JSON.stringify({ reason }) : undefined
                 });
                 toast('تم رفض الموعد', 'warning');
-                document.getElementById('adminApptResult').innerHTML =
-                `<span class="text-muted">❌ تم رفض الموعد ${id}</span>`; } catch (err) { toast('خطأ: ' + err.message,
-                    'error'); }
+                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
         }
 
-        async function adminCancel() {
-            const id = document.getElementById('adminApptId').value;
-            if (!id) { toast('أدخل معرف الموعد', 'warning'); return; }
+        async function cancelAppt(id) {
             if (!confirm('هل أنت متأكد من الإلغاء؟')) return;
             const reason = prompt('سبب الإلغاء (اختياري):');
             try { await apiFetch(`/api/appointments/${id}/cancel`, {
@@ -1113,22 +1098,16 @@
                     body: reason ? JSON.stringify({ reason }) : undefined
                 });
                 toast('تم إلغاء الموعد', 'info');
-                document.getElementById('adminApptResult').innerHTML =
-                `<span class="text-muted">⛔ تم إلغاء الموعد ${id}</span>`; } catch (err) { toast('خطأ: ' + err.message,
-                    'error'); }
+                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
         }
 
-        async function adminFinish() {
-            const id = document.getElementById('adminApptId').value;
-            if (!id) { toast('أدخل معرف الموعد', 'warning'); return; }
+        async function finishAppt(id) {
             try { await apiFetch(`/api/appointments/${id}/finish`, { method: 'GET' });
                 toast('تم إنهاء الموعد', 'success');
-                document.getElementById('adminApptResult').innerHTML =
-                `<span class="text-muted">🏁 تم إنهاء الموعد ${id}</span>`; } catch (err) { toast('خطأ: ' + err.message,
-                    'error'); }
+                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
         }
 
-        // ===== Customer forms =====
+        // ===== دوال حجز وتعديل المواعيد للزبون =====
         function showAppointmentForm(data) {
             if (STATE.role !== 'CUSTOMER') { toast('العملاء فقط يمكنهم حجز مواعيد', 'warning'); return; }
             const form = document.getElementById('appointmentForm');
@@ -1181,40 +1160,6 @@
             if (item) showAppointmentForm({ id: item.id, serviceId: item.serviceId || item.service?.id,
                 startDateTime: item.startDateTime, note: item.note });
             else toast('لا يمكن تحميل بيانات الموعد', 'warning');
-        }
-
-        // ===== Reusable actions =====
-        async function approveAppt(id) {
-            try { await apiFetch(`/api/appointments/${id}/approve`, { method: 'GET' });
-                toast('تم قبول الموعد', 'success');
-                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
-        }
-
-        async function rejectAppt(id) {
-            const reason = prompt('سبب الرفض (اختياري):');
-            try { await apiFetch(`/api/appointments/${id}/reject`, {
-                    method: 'GET',
-                    body: reason ? JSON.stringify({ reason }) : undefined
-                });
-                toast('تم رفض الموعد', 'warning');
-                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
-        }
-
-        async function cancelAppt(id) {
-            if (!confirm('هل أنت متأكد من الإلغاء؟')) return;
-            const reason = prompt('سبب الإلغاء (اختياري):');
-            try { await apiFetch(`/api/appointments/${id}/cancel`, {
-                    method: 'GET',
-                    body: reason ? JSON.stringify({ reason }) : undefined
-                });
-                toast('تم إلغاء الموعد', 'info');
-                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
-        }
-
-        async function finishAppt(id) {
-            try { await apiFetch(`/api/appointments/${id}/finish`, { method: 'GET' });
-                toast('تم إنهاء الموعد', 'success');
-                loadAppointments(); } catch (err) { toast('خطأ: ' + err.message, 'error'); }
         }
 
         // ================================================================
@@ -1454,10 +1399,6 @@
             window.rejectAppt = rejectAppt;
             window.cancelAppt = cancelAppt;
             window.finishAppt = finishAppt;
-            window.adminApprove = adminApprove;
-            window.adminReject = adminReject;
-            window.adminCancel = adminCancel;
-            window.adminFinish = adminFinish;
             window.loadSchedules = loadSchedules;
             window.showScheduleForm = showScheduleForm;
             window.hideScheduleForm = hideScheduleForm;
