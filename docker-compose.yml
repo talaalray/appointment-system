@@ -36,7 +36,7 @@ services:
       start_period: 40s
 
   app:
-    image: appointment-app:local
+    image: talaalray/appointment-app:latest
     container_name: appointment-app
     restart: unless-stopped
     networks:

@@ -1,4 +1,3 @@
-project2@myserver:~/appointment-system$ cat Dockerfile
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
