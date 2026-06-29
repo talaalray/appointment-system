@@ -257,6 +257,11 @@ public class AppointmentService {
                 .orElseThrow(() -> new RuntimeException("Appointment not found"));
     }
 
+    @Transactional(readOnly = true)
+    public List<Appointment> getAllAppointments() {
+        return appointmentRepository.findAll();
+}
+
     // ==========================
     //  Helpers
     // ==========================
@@ -284,3 +289,5 @@ public class AppointmentService {
         return oldNote + " | " + newPart;
     }
 }
+
+

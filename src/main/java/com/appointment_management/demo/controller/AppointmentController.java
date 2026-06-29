@@ -90,6 +90,11 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getForCustomer(user.getId()));
     }
 
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<Appointment>> getAllAppointments() {
+        return ResponseEntity.ok(appointmentService.getAllAppointments());
+    }
     //  مواعيد مقدم الخدمة
 
 
@@ -100,3 +105,5 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.getAppointmentForProvider(user.getId()));
     }
 }
+
+

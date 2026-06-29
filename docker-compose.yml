@@ -36,7 +36,7 @@ services:
       start_period: 40s
 
   app:
-    image: talaalray/appointment-app:latest
+    image: appointment-app:local
     container_name: appointment-app
     restart: unless-stopped
     networks:
@@ -71,6 +71,7 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/certs:/etc/nginx/certs:ro
       - nginx-logs:/var/log/nginx
+      - ./frontend-html:/usr/share/nginx/html:ro
     depends_on:
       - app
 

@@ -1,3 +1,4 @@
+project2@myserver:~/appointment-system$ cat Dockerfile
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
@@ -9,3 +10,7 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+project2@myserver:~/appointment-system$
+
+
+
